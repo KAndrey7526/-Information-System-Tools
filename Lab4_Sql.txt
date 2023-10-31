@@ -1,0 +1,631 @@
+Задание 1
+Напишите команды, сохраните их в файл, чтобы потом отправить на
+проверку.
+1) Смените текущую БД на на my_db.
+2) Посмотрите, какие таблицы есть в my_db?
+3) Посмотрите, какие типы полей есть в таблице user_private_message?
+
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| my_db              |
+| mysql              |
+| performance_schema |
+| sys                |
++--------------------+
+5 rows in set (0.00 sec)
+
+mysql> use my_db
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql> show tables;
++----------------------------+
+| Tables_in_my_db            |
++----------------------------+
+| discussion_group           |
+| user                       |
+| user_group_post            |
+| user_private_message       |
+| users_to_discussion_groups |
++----------------------------+
+5 rows in set (0.01 sec)
+
+mysql> desc user_private_message;
++--------------+--------------+------+-----+-------------------+-------------------+
+| Field        | Type         | Null | Key | Default           | Extra             |
++--------------+--------------+------+-----+-------------------+-------------------+
+| message_id   | int unsigned | NO   | PRI | NULL              | auto_increment    |
+| user_from_id | int unsigned | YES  | MUL | NULL              |                   |
+| user_to_id   | int unsigned | YES  | MUL | NULL              |                   |
+| send_time    | timestamp    | NO   | MUL | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
+| is_read      | tinyint(1)   | NO   |     | NULL              |                   |
+| read_time    | timestamp    | YES  |     | NULL              |                   |
+| message_text | text         | NO   |     | NULL              |                   |
++--------------+--------------+------+-----+-------------------+-------------------+
+7 rows in set (0.00 sec)
+
+mysql> show create table user_private_message;
++----------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Table                | Create Table                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
++----------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| user_private_message | CREATE TABLE `user_private_message` (
+  `message_id` int unsigned NOT NULL AUTO_INCREMENT,
+  `user_from_id` int unsigned DEFAULT NULL,
+  `user_to_id` int unsigned DEFAULT NULL,
+  `send_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `is_read` tinyint(1) NOT NULL,
+  `read_time` timestamp NULL DEFAULT NULL,
+  `message_text` text NOT NULL,
+  PRIMARY KEY (`message_id`),
+  KEY `send_time` (`send_time`),
+  KEY `user_from_id` (`user_from_id`),
+  KEY `user_to_id` (`user_to_id`),
+  CONSTRAINT `user_private_message_ibfk_1` FOREIGN KEY (`user_from_id`) REFERENCES `user` (`user_id`) ON DELETE SET NULL,
+  CONSTRAINT `user_private_message_ibfk_2` FOREIGN KEY (`user_to_id`) REFERENCES `user` (`user_id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=6523257 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci |
++----------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+1 row in set (0.00 sec)
+
+Задание 2
+Напишите запрос, который вернет названия дискуссионных групп, которые
+требуют подтверждение регистрации, т.е. таблица – discussion_group, поле
+approve_required равно 1 или true.
+
+
+mysql> desc discussion_group;
++------------------+--------------+------+-----+-------------------+-------------------+
+| Field            | Type         | Null | Key | Default           | Extra             |
++------------------+--------------+------+-----+-------------------+-------------------+
+| group_id         | int unsigned | NO   | PRI | NULL              | auto_increment    |
+| creation_time    | timestamp    | NO   | MUL | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
+| name             | varchar(255) | NO   |     | NULL              |                   |
+| description      | text         | YES  |     | NULL              |                   |
+| group_tags       | json         | NO   |     | NULL              |                   |
+| admin_user_id    | int unsigned | NO   | MUL | NULL              |                   |
+| approve_required | tinyint(1)   | NO   |     | 0                 |                   |
++------------------+--------------+------+-----+-------------------+-------------------+
+7 rows in set (0.00 sec)
+
+mysql> select name "Nazvanie"
+    -> from discussion_group
+    -> where approve_required = true;
++-----------------------------------------------+
+| Nazvanie                                      |
++-----------------------------------------------+
+| 7176 citystate _MACOSX                        |
+| 6108 montroy printrecipe blog_                |
+| Datenpflege newptip                           |
+| 6b tt                                         |
+| editors-pick dirs resource_center xfguestbook |
+| stepup sendpm                                 |
+| cmn qnotify programmes provisional            |
+| graphics2 torremar                            |
+| cmon forumcp wellington Delphi                |
+| 5727 produs_prieten                           |
+| video2 cookie petra                           |
+| previa file-to-disallow amod_files            |
++-----------------------------------------------+
+12 rows in set (0.00 sec)
+
+Задание 3
+Напишите запрос, который из таблицы user_private_message отберет записи:
+– отправленные в ноябре 2020 года (поле send_time),
+– текст сообщения начинается на ‘A’ (поле message_text),
+– прочитанные не позже 10 дней от даты отправки (поле read_time),
+Что должен показать вывод:
+– выбрать максимальное значение из трех ID: message_id, user_from_id,
+user_to_id,
+– вывести значения полей read_time и send_time только в виде даты и
+подписать их ‘READ’ и ‘SEND’.
+
+select greatest(message_id, user_from_id, user_to_id) "ID", date(read_time) "READ", date(send_time) "SEND", message_text "TEXT"
+    -> from user_private_message
+    -> where send_time between '2020-11-01' and '2020-11-30' and message_text LIKE "a%" and read_time between send_time and adddate(send_time, interval +10 day);
++---------+------------+------------+------------------------------------------------------------------------------------------------------+
+| ID      | READ       | SEND       | TEXT                                                                                                 |
++---------+------------+------------+------------------------------------------------------------------------------------------------------+
+| 6521460 | 2020-11-11 | 2020-11-02 | assets_c AdClick ddp cruceros dlarticle2 d7 ordermotion operation accesorios IMP jubilee             |
+| 6521318 | 2020-11-12 | 2020-11-04 | admindemo dealtime pink 7395 resumelist 6808 prepaidsim index-dev Bin 3816 tmp_media eweb store4 dla |
++---------+------------+------------+------------------------------------------------------------------------------------------------------+
+2 rows in set (0.00 sec)
+
+Задание 4
+Напишите запрос, который выберет из таблицы users_to_discussion_groups:
+– количество подтверждений присоединения к группам,
+– наиболее раннюю дату присоединения пользователя к группе,
+– дату наиболее позднего подтверждения участника в группе.
+
+select count(approved) "approved_cnt", min(joined_time) "oldest_join", max(approved_time) "recent_approve" from users_to_discussion_groups
+    -> where approved = 1;
++--------------+---------------------+---------------------+
+| approved_cnt | oldest_join         | recent_approve      |
++--------------+---------------------+---------------------+
+|           81 | 2018-06-06 00:39:04 | 2021-02-02 00:39:04 |
++--------------+---------------------+---------------------+
+1 row in set (0.00 sec)
+
+Задание 5
+Напишите SQL-запрос, который выбирает 20 последних зарегистрированных
+пользователей. Поля в результатах выборки: user_id, registration_time.
+Чтобы выбрать последних зарегистрированных пользователей, достаточно
+отсортировать их и добавить ограничение на количество результатов.
+
+select user_id, registration_time from user order by registration_time desc limit 20;
++---------+---------------------+
+| user_id | registration_time   |
++---------+---------------------+
+|    8296 | 2021-02-02 00:39:04 |
+|    8427 | 2021-01-30 00:39:04 |
+|    7989 | 2021-01-27 00:39:04 |
+|    8281 | 2021-01-21 00:39:04 |
+|    7647 | 2021-01-12 00:39:04 |
+|    7899 | 2021-01-11 00:39:04 |
+|    7506 | 2021-01-11 00:39:04 |
+|    8271 | 2021-01-07 00:39:04 |
+|    7812 | 2021-01-06 00:39:04 |
+|    7853 | 2021-01-02 00:39:04 |
+|    8123 | 2021-01-01 00:39:04 |
+|    8227 | 2020-12-18 00:39:04 |
+|    8361 | 2020-12-16 00:39:04 |
+|    7533 | 2020-12-09 00:39:04 |
+|    7515 | 2020-12-07 00:39:04 |
+|    7748 | 2020-11-26 00:39:04 |
+|    7939 | 2020-11-22 00:39:04 |
+|    7921 | 2020-11-22 00:39:04 |
+|    8259 | 2020-11-09 00:39:04 |
+|    8095 | 2020-10-25 00:39:04 |
++---------+---------------------+
+
+Задание 6
+Напишите SQL-запрос, который удовлетворяет следующим критериям:
+1) В запросе в секции WITH указаны два подзапроса:
+– groups_with_approve — выбирает группы, в которых требуется
+подтверждение;
+– new_groups — группы, созданные в 2020 году или позже, в которых
+требуется подтверждение.
+2) Между подзапросами groups_with_approve и new_groups есть зависимость.
+3) В основном запросе происходит выборка всего из new_groups.
+
+with
+    -> groups_with_approve as (select * from discussion_group where approve_required=1),
+    -> new_groups as (select * from groups_with_approve where creation_time between '2020-01-01' and curdate())
+    -> select group_id from new_groups;
++----------+
+| group_id |
++----------+
+|   570774 |
+|   570864 |
+|   570823 |
+|   570848 |
++----------+
+4 rows in set (0.00 sec)
+
+Задание 7
+Напишите SQL-запрос, который выбирает уникальные идентификаторы
+пользователей среди администраторов групп и отправителей приватных
+сообщений.
+
+select admin_user_id from discussion_group union
+    -> select user_from_id from user_private_message;
++---------------+
+| admin_user_id |
++---------------+
+|          7573 |
+|          7606 |
+|          7616 |
+|          7675 |
+|          7691 |
+|          7748 |
+|          7763 |
+|          7818 |
+|          7947 |
+|          7960 |
+|          7964 |
+|          8042 |
+|          8416 |
+|          8475 |
+|          8543 |
+|          8561 |
+|          8592 |
+|          8599 |
+|          8609 |
+|          7490 |
+|          7498 |
+|          7500 |
+|          7506 |
+|          7515 |
+|          7525 |
+|          7533 |
+|          7543 |
+|          7545 |
+|          7547 |
+|          7552 |
+|          7564 |
+|          7580 |
+|          7583 |
+|          7585 |
+|          7598 |
+|          7605 |
+|          7614 |
+|          7622 |
+|          7629 |
+|          7635 |
+|          7647 |
+|          7656 |
+|          7666 |
+|          7667 |
+|          7669 |
+|          7683 |
+|          7697 |
+|          7702 |
+|          7705 |
+|          7712 |
+|          7713 |
+|          7720 |
+|          7725 |
+|          7733 |
+|          7743 |
+|          7757 |
+|          7762 |
+|          7772 |
+|          7776 |
+|          7784 |
+|          7791 |
+|          7803 |
+|          7812 |
+|          7816 |
+|          7817 |
+|          7820 |
+|          7833 |
+|          7838 |
+|          7846 |
+|          7849 |
+|          7853 |
+|          7862 |
+|          7868 |
+|          7870 |
+|          7873 |
+|          7882 |
+|          7892 |
+|          7894 |
+|          7896 |
+|          7899 |
+|          7909 |
+|          7910 |
+|          7914 |
+|          7920 |
+|          7921 |
+|          7930 |
+|          7939 |
+|          7951 |
+|          7966 |
+|          7973 |
+|          7976 |
+|          7983 |
+|          7984 |
+|          7988 |
+|          7989 |
+|          7996 |
+|          8001 |
+|          8010 |
+|          8020 |
+|          8033 |
+|          8041 |
+|          8051 |
+|          8061 |
+|          8078 |
+|          8085 |
+|          8086 |
+|          8090 |
+|          8095 |
+|          8098 |
+|          8103 |
+|          8107 |
+|          8116 |
+|          8123 |
+|          8131 |
+|          8139 |
+|          8144 |
+|          8153 |
+|          8163 |
+|          8169 |
+|          8172 |
+|          8177 |
+|          8179 |
+|          8186 |
+|          8193 |
+|          8203 |
+|          8205 |
+|          8211 |
+|          8212 |
+|          8217 |
+|          8222 |
+|          8227 |
+|          8236 |
+|          8242 |
+|          8249 |
+|          8259 |
+|          8261 |
+|          8271 |
+|          8274 |
+|          8281 |
+|          8288 |
+|          8296 |
+|          8303 |
+|          8311 |
+|          8318 |
+|          8328 |
+|          8349 |
+|          8357 |
+|          8361 |
+|          8362 |
+|          8367 |
+|          8372 |
+|          8380 |
+|          8381 |
+|          8385 |
+|          8393 |
+|          8401 |
+|          8406 |
+|          8417 |
+|          8425 |
+|          8427 |
+|          8432 |
+|          8451 |
+|          8457 |
+|          8465 |
+|          8478 |
+|          8485 |
+|          8501 |
+|          8506 |
+|          8516 |
+|          8525 |
+|          8533 |
+|          8539 |
+|          8546 |
+|          8548 |
+|          8554 |
+|          8557 |
+|          8571 |
+|          8577 |
+|          8586 |
++---------------+
+179 rows in set (0.00 sec)
+
+Задание 8
+Сложное задание.
+Напишите запрос, который выберет все даты, в которые были отправлены
+какие-либо личные сообщения, и в которые любой из отправивших сообщения
+сделал это только один раз в этот день.
+Используем таблицу user_private_message.
+Не забываем про функцию date(send_time).
+
+
+select date(send_time) date, count(message_id) sum_cnts, count(distinct user_from_id) as cnt_sum  from user_private_message  group by date having sum_cnts=cnt_sum;
++------------+----------+---------+
+| date       | sum_cnts | cnt_sum |
++------------+----------+---------+
+| 2020-10-21 |       13 |      13 |
+| 2020-10-22 |       24 |      24 |
+| 2020-10-24 |       19 |      19 |
+| 2020-10-27 |       13 |      13 |
+| 2020-10-28 |       18 |      18 |
+| 2020-11-03 |       25 |      25 |
++------------+----------+---------+
+6 rows in set (0.00 sec)
+
+Задание 9
+Проверьте существуют ли коллекции users и posts в БД my_db.
+Напишите использованные команды и получившийся результат.
+
+ show dbs
+admin    40.00 KiB
+config   12.00 KiB
+local    72.00 KiB
+my_db   204.00 KiB
+test> use my_db
+switched to db my_db
+my_db> show collections
+posts
+users
+my_db>
+
+Задание 10
+Из коллекции постов выберите документы, в которых среди топиков
+встречается ‘as’, идентификатор автора содержит example.ru, а score больше
+100.
+
+ db.posts.find({"topics":"as", "author": /.*example.ru.*/, "score": {$gt: 100}})
+[
+  {
+    _id: ObjectId("653b827b2aaf236cfc89adcb"),
+    author: 'lprudy@example.ru',
+    creation_date: ISODate("2020-06-27T00:00:00.000Z"),
+    topics: [ 'as', 'very', 'a', 'but' ],
+    score: 242,
+    status: 'published',
+    message: 'us for over with rabbit and screamed to to life her sat and i to and be and and join don fell march said majesty found if ever and their stand to than natural doing dormouse alice know size and back go twinkle alice went askance commotion caused in the she all found taking croquet dormouse but hearing the i as evidence i put the your'
+  },
+  {
+    _id: ObjectId("653b827b2aaf236cfc89add0"),
+    author: 'aalfred@example.ru',
+    creation_date: ISODate("2021-02-03T00:00:00.000Z"),
+    topics: [ 'as', 'pleasure', 'hot' ],
+    score: 4707,
+    status: 'published',
+    message: 'all find the a that alice therefore off yet same and and it all rather and said the said out leaves tell this nor chorus just nine blasts made s plate if to nothing her round nose to except interesting alice say become is hatter grinned this and with close that over come and that all as mushroom interrupted then first time up the it wood what procession we moment pointing thought a round you'
+  },
+  {
+    _id: ObjectId("653b827b2aaf236cfc89ae1c"),
+    author: 'sagnesse@example.ru',
+    creation_date: ISODate("2020-03-27T00:00:00.000Z"),
+    topics: [ 'worth', 'as', 'pleasure', 'get' ],
+    score: 369,
+    status: 'published',
+    message: 'sure for moment a it were it like could said mean fluttered'
+  }
+]
+
+Задание 11
+Одним запросом добавьте два документа к коллекции posts:
+1) creation_date — текущее время, автор — skbx@example.com, topics
+должен быть списком из одного элемента “mongodb”;
+2) creation_date — 31 декабря 2021 года, автор — skbx@example.ru.
+
+ db.posts.insertMany([{"creation_date" : new Date(), "author": "skbx@example.com", "topics": ["mongodb"]},{"creation_time": ISODate("2021-12-31T00:00:00.000Z"), "author": "skbx@example.ru"}])
+{
+  acknowledged: true,
+  insertedIds: {
+    '0': ObjectId("653b853dc287dfbfa93c642a"),
+    '1': ObjectId("653b853dc287dfbfa93c642b")
+  }
+}
+
+my_db> db.posts.find({"author":"skbx@example.ru"})
+[
+  {
+    _id: ObjectId("653b853dc287dfbfa93c642b"),
+    creation_time: ISODate("2021-12-31T00:00:00.000Z"),
+    author: 'skbx@example.ru'
+  }
+]
+my_db> db.posts.find({"author":"skbx@example.com"})
+[
+  {
+    _id: ObjectId("653b853dc287dfbfa93c642a"),
+    creation_date: ISODate("2023-10-27T09:39:09.749Z"),
+    author: 'skbx@example.com',
+    topics: [ 'mongodb' ]
+  }
+]
+
+Задание 12
+Посчитайте сумму кармы по первым буквам имён пользователей для тех
+пользователей, у которых больше 300 визитов.
+
+db.users.aggregate([{$match: {"visits": {$gt: 300}}}, {$group: { _id: {$substr: ["$first_name",0,1]}, sum: {$sum: "$karma"}}}])
+[
+  { _id: 'L', sum: 243 },
+  { _id: 'G', sum: 199 },
+  { _id: 'S', sum: 296 },
+  { _id: 'O', sum: 71 },
+  { _id: 'D', sum: -64 },
+  { _id: 'Z', sum: -82 },
+  { _id: 'J', sum: 419 },
+  { _id: 'H', sum: 79 },
+  { _id: 'E', sum: 120 },
+  { _id: 'T', sum: -68 },
+  { _id: 'K', sum: 153 },
+  { _id: 'V', sum: -43 },
+  { _id: 'B', sum: 323 },
+  { _id: 'M', sum: 516 },
+  { _id: 'C', sum: 176 },
+  { _id: 'P', sum: 94 },
+  { _id: 'R', sum: 53 },
+  { _id: 'A', sum: -28 }
+]
+
+Задание 13
+Напишите последовательность команд для Redis:
+1. Создайте ключ index со значением “index precalculated content”.
+2. Проверьте, есть ли ключ index в БД.
+3. Узнайте, сколько еще времени будет существовать ключ index.
+4. Установите ключу время жизни 2 минуты.
+5. Отмените запланированное удаление ключа index
+
+127.0.0.1:6379> set index "index precalculated content"
+OK
+127.0.0.1:6379> get index
+"index precalculated content"
+127.0.0.1:6379> ttl index
+(integer) -1
+127.0.0.1:6379> set index "index precalculated content" ex 120
+OK
+127.0.0.1:6379> ttl index
+(integer) 116
+127.0.0.1:6379> set index persist
+OK
+127.0.0.1:6379> ttl index
+(integer) -1
+
+Задание 14
+Напишите последовательность команд для Redis:
+1. Создайте в Redis структуру данных с ключом ratings для хранения
+следующих значений рейтингов технологий: mysql — 10, postgresql — 20,
+mongodb — 30, redis — 40.
+2. По этому же ключу увеличьте значение рейтинга mysql на 15.
+3. Удалите из структуры элемент с максимальным значением.
+4. Выведите место в рейтинге для mysql.
+
+127.0.0.1:6379> zadd ratings 10 mysql
+(integer) 1
+127.0.0.1:6379> zadd ratings 20 postgresql
+(integer) 1
+127.0.0.1:6379> zadd ratings 30 mongodb
+(integer) 1
+127.0.0.1:6379> zadd ratings 40 redis
+(integer) 1
+127.0.0.1:6379> zrange ratings 0 3
+1) "mysql"
+2) "postgresql"
+3) "mongodb"
+4) "redis"
+127.0.0.1:6379> zincrby ratings 15 mysql
+"25"
+127.0.0.1:6379> zpopmax raitings
+(empty array)
+127.0.0.1:6379> zpopmax ratings
+1) "redis"
+2) "40"
+127.0.0.1:6379> zrange ratings 0 10 rev withscores
+1) "mongodb"
+2) "30"
+3) "mysql"
+4) "25"
+5) "postgresql"
+6) "20"
+127.0.0.1:6379> zrank ratings mysql
+(integer) 1
+
+Задание 15
+Напишите две команды для СУБД Redis:
+1. Подпишитесь на все события, опубликованные на каналах,
+начинающихся с events.
+2. Опубликуйте сообщение на канале events42 с текстом “Hello there”.
+
+127.0.0.1:6379>  publish chat1 Hello!
+(integer) 1
+127.0.0.1:6379>  publish chat2 Hi!
+(integer) 1
+127.0.0.1:6379> publish events42 "Hello there"
+(integer) 1
+127.0.0.1:6379>
+
+------------------------------------------------
+
+127.0.0.1:6379> subscribe chat1 chat2
+1) "subscribe"
+2) "chat1"
+3) (integer) 1
+1) "subscribe"
+2) "chat2"
+3) (integer) 2
+1) "message"
+2) "chat1"
+3) "Hello!"
+1) "message"
+2) "chat2"
+3) "Hi!"
+127.0.0.1:6379(subscribed mode)> psubscribe events*
+1) "psubscribe"
+2) "events*"
+3) (integer) 3
+1) "pmessage"
+2) "events*"
+3) "events42"
+4) "Hello there"
+Reading messages... (press Ctrl-C to quit or any key to type command)
